@@ -1,0 +1,9 @@
+#!/usr/bin/env python
+import json
+import subprocess
+
+users = [line.split() for line in subprocess.check_output(["dscl", ".", "-list", "/Users", "UniqueID"]).strip().split(b'\n')]
+
+non_system_users = [user[0].decode("utf-8") for user in users if int(user[1]) >= 500]
+
+print(json.dumps(non_system_users))

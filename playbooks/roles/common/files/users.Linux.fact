@@ -1,0 +1,11 @@
+#!/usr/bin/env python3
+# assume python 3.
+import json
+from io import open
+
+f = open("/etc/passwd", encoding="utf-8")
+users = [line.split(":") for line in f.read().strip().split("\n")]
+
+non_system_users = [user[0] for user in users if int(user[2]) >= 1000]
+
+print(json.dumps(non_system_users))

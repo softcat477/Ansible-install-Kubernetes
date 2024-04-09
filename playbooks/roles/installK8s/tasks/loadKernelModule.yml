@@ -1,0 +1,13 @@
+---
+- name: Forwarding IPv4 and letting iptables see bridged traffic
+  become: true
+  lineinfile:
+    path: /etc/modules-load.d/k8s.conf
+    state: present
+    create: true
+    line: "{{ item }}"
+- name: "Add {{ item }} module"
+  become: true
+  community.general.modprobe:
+    name: "{{ item }}"
+    state: present

@@ -1,0 +1,5 @@
+---
+- name: Install kubeadm, kubectl, kubelet, docker, containerd
+  hosts: k8s
+  roles:
+    - role: installK8s

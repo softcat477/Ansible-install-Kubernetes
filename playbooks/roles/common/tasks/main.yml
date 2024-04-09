@@ -1,0 +1,27 @@
+---
+# Add facts
+- name: Create directory for ansible custom facts
+  ansible.builtin.file:
+    state: directory
+    recurse: true
+    path: /etc/ansible/facts.d
+  become: true
+  tags:
+    - facts
+
+- name: Install user fact
+  ansible.builtin.copy:
+    src: users.{{ ansible_system }}.fact
+    dest: /etc/ansible/facts.d/current_users.fact
+    mode: a+x
+  become: true
+  register: fact_install
+  tags:
+    - facts
+
+- name: Reread facts
+  ansible.builtin.setup:
+    filter: ansible_local
+  when: fact_install is changed
+  tags:
+    - facts

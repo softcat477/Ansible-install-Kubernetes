@@ -1,0 +1,61 @@
+---
+- name: Load overlay and br_netfilter
+  include_tasks: loadKernelModule.yml
+  loop:
+    - overlay
+    - br_netfilter
+- name: sysctl params required by setup, params persist across reboots
+  become: true
+  lineinfile:
+    path: /etc/sysctl.d/k8s.conf
+    state: present
+    create: true
+    line: "{{ item }}"
+  loop:
+    - "net.bridge.bridge-nf-call-iptables  = 1"
+    - "net.bridge.bridge-nf-call-ip6tables = 1"
+    - "net.ipv4.ip_forward                 = 1"
+- name: Apply sysctl params without reboot
+  become: true
+  shell: sysctl --system
+
+- name: Verify that br_netfilter is loaded
+  shell: lsmod | grep br_netfilter
+  changed_when: false
+  ignore_errors: true
+  register: out_betfilter
+
+- name: Fail if br_netfilter is not loaded
+  fail:
+    msg: "br_netfilter is not loaded"
+  when: out_betfilter.rc != 0
+  
+- name: Verify that overlay is loaded
+  shell: lsmod | grep overlay
+  changed_when: false
+  ignore_errors: true
+  register: out_overlay
+
+- name: Fail if overlay is not loaded
+  fail:
+    msg: "overlay is not loaded"
+  when: out_overlay.rc != 0
+
+- name: Verify sysctl
+  become: true
+  shell: sudo sysctl net.bridge.bridge-nf-call-iptables net.bridge.bridge-nf-call-ip6tables net.ipv4.ip_forward
+  changed_when: false
+  register: out_sysctl
+
+- name: Fail if system variables are not set to 1
+  fail:
+    msg: "system variable {{ item }} does not end with 1"
+  when: item.split("=")[-1].strip() != "1"
+  with_items: "{{ out_sysctl.stdout_lines }}"
+
+
+- name: Install containerd
+  include_tasks: installContainerd_{{ ansible_distribution }}.yml
+
+- name: Install kubeadm
+  include_tasks: installKubeadm_{{ ansible_os_family }}.yml
